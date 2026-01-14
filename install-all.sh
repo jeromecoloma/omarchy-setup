@@ -1,4 +1,4 @@
 #/bin/bash
 
-./install-node.sh
+./install-stow.sh
 ./install-tmux.sh
