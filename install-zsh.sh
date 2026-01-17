@@ -1,6 +1,13 @@
-#!/bin/sh
+#!/bin/bash
+set -e
 
-# Install zsh
+# Install zsh if not present
 if ! command -v zsh &>/dev/null; then
-    yay -S --no-confirm --needed zsh
+    yay -S --noconfirm --needed zsh
+fi
+
+# Set zsh as default shell
+if [ "$SHELL" != "$(which zsh)" ]; then
+    chsh -s "$(which zsh)"
+    echo "Zsh set as default shell. Please log out and back in."
 fi
