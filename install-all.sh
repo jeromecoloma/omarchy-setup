@@ -9,3 +9,4 @@ set -e
 ./install-shell-tools.sh
 ./install-ssh.sh
 ./install-openconnect.sh
+./install-teams.sh
