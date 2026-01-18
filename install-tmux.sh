@@ -3,7 +3,7 @@
 set -e 
 
 # Install tmux
-yay -S --noconfirm --needed tmux
+yay -S --noconfirm --needed tmux python-libtmux
 
 # Verify installation
 if command -v tmux >/dev/null 2>&1; then
