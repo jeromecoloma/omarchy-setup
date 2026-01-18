@@ -22,6 +22,10 @@ cd ~/omarchy-setup
 | `install-shell-tools.sh` | fzf, wl-clipboard, xclip, yazi |
 | `install-fonts.sh` | JetBrainsMono Nerd Font |
 
+## Companion Repository
+
+This project works alongside [omarchy-dotfiles](https://github.com/jeromecoloma/omarchy-dotfiles), which contains the actual dotfile configurations managed by GNU Stow.
+
 ## Requirements
 
 - Arch Linux with `yay` AUR helper
