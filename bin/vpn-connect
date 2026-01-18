@@ -1,0 +1,177 @@
+#!/bin/bash
+CONFIG_DIR="$HOME/.config/openconnect"
+mkdir -p "$CONFIG_DIR"
+
+# List available profiles
+list_profiles() {
+    echo "Available VPN profiles:"
+    local found=false
+    shopt -s nullglob
+    for f in "$CONFIG_DIR"/*.conf; do
+        if [ -f "$f" ]; then
+            echo "  - $(basename "$f" .conf)"
+            found=true
+        fi
+    done
+    shopt -u nullglob
+    if [ "$found" = false ]; then
+        echo "  (none)"
+    fi
+}
+
+# Add a new profile
+add_profile() {
+    read -p "Profile name (e.g., work, client): " profile_name
+    if [ -z "$profile_name" ]; then
+        echo "Profile name cannot be empty."
+        return 1
+    fi
+
+    CONFIG_FILE="$CONFIG_DIR/$profile_name.conf"
+    if [ -f "$CONFIG_FILE" ]; then
+        read -p "Profile '$profile_name' already exists. Overwrite? [y/N] " overwrite
+        if [[ ! "$overwrite" =~ ^[Yy]$ ]]; then
+            echo "Cancelled."
+            return 0
+        fi
+        BACKUP_FILE="$CONFIG_FILE.bak.$(date +%Y%m%d%H%M%S)"
+        cp "$CONFIG_FILE" "$BACKUP_FILE"
+        echo "Backup saved to: $BACKUP_FILE"
+    fi
+
+    read -p "VPN server (e.g., vpn.example.com): " vpn_server
+    read -p "Username: " vpn_user
+    read -p "Auth group (leave empty if none): " vpn_authgroup
+
+    cat > "$CONFIG_FILE" << EOF
+VPN_SERVER="$vpn_server"
+VPN_USER="$vpn_user"
+VPN_AUTHGROUP="$vpn_authgroup"
+EOF
+    chmod 600 "$CONFIG_FILE"
+    echo "Profile '$profile_name' created."
+
+    read -p "Would you like to store a password for this profile? [y/N] " store_pw
+    if [[ "$store_pw" =~ ^[Yy]$ ]]; then
+        set_password "$profile_name"
+    fi
+}
+
+# Remove a profile
+remove_profile() {
+    local profile="$1"
+    if [ -z "$profile" ]; then
+        echo "Usage: vpn-connect --remove <profile>"
+        return 1
+    fi
+
+    CONFIG_FILE="$CONFIG_DIR/$profile.conf"
+    if [ ! -f "$CONFIG_FILE" ]; then
+        echo "Profile '$profile' not found."
+        return 1
+    fi
+
+    read -p "Remove profile '$profile'? [y/N] " confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        echo "Cancelled."
+        return 0
+    fi
+
+    rm "$CONFIG_FILE"
+    # Also remove password from keyring if it exists
+    secret-tool clear vpn "$profile" 2>/dev/null || true
+    echo "Profile '$profile' removed."
+}
+
+# Set password for a profile
+set_password() {
+    local profile="$1"
+    if [ -z "$profile" ]; then
+        echo "Usage: vpn-connect --set-password <profile>"
+        return 1
+    fi
+
+    CONFIG_FILE="$CONFIG_DIR/$profile.conf"
+    if [ ! -f "$CONFIG_FILE" ]; then
+        echo "Profile '$profile' not found."
+        return 1
+    fi
+
+    echo "Enter password for profile '$profile':"
+    secret-tool store --label="VPN: $profile" vpn "$profile"
+    echo "Password stored in keyring."
+}
+
+# Get password from keyring (returns empty if not found)
+get_password() {
+    local profile="$1"
+    secret-tool lookup vpn "$profile" 2>/dev/null
+}
+
+# Show usage
+show_usage() {
+    echo "Usage: vpn-connect <profile>       Connect to VPN profile"
+    echo "       vpn-connect --add           Add a new profile"
+    echo "       vpn-connect --remove <p>    Remove a profile"
+    echo "       vpn-connect --set-password <p>  Store password in keyring"
+    echo "       vpn-connect --list          List all profiles"
+    echo ""
+    list_profiles
+}
+
+# Handle commands
+case "$1" in
+    --add|-a)
+        add_profile
+        exit $?
+        ;;
+    --remove|-r)
+        remove_profile "$2"
+        exit $?
+        ;;
+    --set-password|-p)
+        set_password "$2"
+        exit $?
+        ;;
+    --list|-l)
+        list_profiles
+        exit 0
+        ;;
+    --help|-h|"")
+        show_usage
+        exit 0
+        ;;
+    -*)
+        echo "Unknown option: $1"
+        show_usage
+        exit 1
+        ;;
+esac
+
+# Connect to profile
+PROFILE="$1"
+CONFIG_FILE="$CONFIG_DIR/$PROFILE.conf"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Profile '$PROFILE' not found."
+    echo ""
+    list_profiles
+    exit 1
+fi
+
+source "$CONFIG_FILE"
+
+ARGS=("$VPN_SERVER" "-u" "$VPN_USER")
+if [ -n "$VPN_AUTHGROUP" ]; then
+    ARGS+=("--authgroup=$VPN_AUTHGROUP")
+fi
+
+# Check for stored password
+PASSWORD=$(get_password "$PROFILE")
+
+echo "Connecting to $VPN_SERVER as $VPN_USER..."
+if [ -n "$PASSWORD" ]; then
+    echo "$PASSWORD" | sudo openconnect --passwd-on-stdin "${ARGS[@]}"
+else
+    sudo openconnect "${ARGS[@]}"
+fi
