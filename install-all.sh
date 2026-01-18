@@ -7,3 +7,4 @@ set -e
 ./install-zsh.sh
 ./install-omp.sh
 ./install-shell-tools.sh
+./install-ssh.sh
