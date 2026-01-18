@@ -14,5 +14,18 @@ else
     exit 1
 fi
 
+# Install TPM (Tmux Plugin Manager)
+TPM_DIR="$HOME/.tmux/plugins/tpm"
+if [ ! -d "$TPM_DIR" ]; then
+    echo "Installing TPM..."
+    git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
+else
+    echo "TPM already installed."
+fi
+
+# Install tmux plugins
+echo "Installing tmux plugins..."
+"$TPM_DIR/bin/install_plugins"
+
 
 
