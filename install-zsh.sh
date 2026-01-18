@@ -6,6 +6,9 @@ if ! command -v zsh &>/dev/null; then
     yay -S --noconfirm --needed zsh
 fi
 
+# Install zsh plugins
+yay -S --noconfirm --needed zsh-autosuggestions zsh-syntax-highlighting
+
 # Set zsh as default shell
 if [ "$SHELL" != "$(which zsh)" ]; then
     chsh -s "$(which zsh)"

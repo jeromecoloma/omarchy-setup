@@ -6,3 +6,4 @@ set -e
 ./install-tmux.sh
 ./install-zsh.sh
 ./install-omp.sh
+./install-shell-tools.sh
