@@ -5,5 +5,6 @@ set -e
 yay -S --noconfirm --needed \
     fzf \
     wl-clipboard \
+    wget \
     xclip \
     yazi
