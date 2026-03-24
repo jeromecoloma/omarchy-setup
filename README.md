@@ -16,6 +16,7 @@ cd ~/omarchy-setup
 | `install-all.sh` | Run all install scripts |
 | `install-stow.sh` | GNU Stow (dotfile symlinks) |
 | `install-eza.sh` | eza (modern ls replacement) |
+| `install-rsync.sh` | rsync (file sync and transfer) |
 | `install-tmux.sh` | tmux + TPM plugin manager |
 | `install-zsh.sh` | zsh + plugins, set as default shell |
 | `install-omp.sh` | Oh My Posh prompt with star theme |
